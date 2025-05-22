@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventaire DJ</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f9f9f9; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 2em; }
+    th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+    th { background: #eee; }
+    form { display: flex; flex-wrap: wrap; gap: 0.5em; margin-bottom: 2em; }
+    input, select, button { padding: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>Inventaire DJ</h1>
+
+  <form id="itemForm">
+    <input name="Nom" placeholder="Nom" required>
+    <input name="Catégorie" placeholder="Catégorie" required>
+    <input name="Longueur/Taille" placeholder="Longueur/Taille">
+    <input name="Connecteurs" placeholder="Connecteurs">
+    <input name="Quantité" type="number" placeholder="Quantité">
+    <input name="État" placeholder="État">
+    <input name="Étiqueté" placeholder="Étiqueté">
+    <input name="Couleur" placeholder="Couleur">
+    <input name="Localisation" placeholder="Localisation">
+    <input name="Remarques" placeholder="Remarques">
+    <input name="Code Matériel" placeholder="Code Matériel">
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <table id="inventory">
+    <thead>
+      <tr>
+        <th>Nom</th><th>Catégorie</th><th>Quantité</th><th>État</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const api = "http://127.0.0.1:5000/api/items";
+
+    function loadItems() {
+      fetch(api)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("#inventory tbody");
+          tbody.innerHTML = "";
+          data.forEach(item => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${item.Nom}</td>
+              <td>${item.Catégorie}</td>
+              <td>${item.Quantité}</td>
+              <td>${item["État"]}</td>
+              <td>
+                <button onclick='deleteItem("${item.ID}")'>🗑</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        });
+    }
+
+    function deleteItem(id) {
+      if (confirm("Supprimer cet élément ?")) {
+        fetch(`${api}/${id}`, { method: "DELETE" })
+          .then(() => loadItems());
+      }
+    }
+
+    document.querySelector("#itemForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      data.Quantité = parseInt(data.Quantité) || 0;
+      fetch(api, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(() => {
+        e.target.reset();
+        loadItems();
+      });
+    });
+
+    loadItems();
+  </script>
+</body>
+</html>
